@@ -187,7 +187,9 @@ class Order extends AbstractStruct implements StructInterface
             }
         }
 
-        $data = array_filter($data);
+        $data = array_filter($data, function ($value) {
+            return $value !== null && $value !== '';
+        });
 
         return $data;
     }

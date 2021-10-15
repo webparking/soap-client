@@ -610,7 +610,9 @@ class OrderItem extends AbstractStruct implements StructInterface
             self::REPRESENTATIVE => $this->getRepresentative(),
         ];
 
-        $data = array_filter($data);
+        $data = array_filter($data, function ($value) {
+            return $value !== null && $value !== '';
+        });
 
         //we always send the site indication.
         $data[self::SITE_INDICATION] = $this->getSiteIndication();
