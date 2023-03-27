@@ -1,20 +1,12 @@
 version: "3"
 services:
-  composer:
+  workspace:
+    tty: true
     build:
-      context: ./docker/composer
-    environment:
-      - COMPOSER_CACHE_DIR=/app/var/cache/composer
-      #docker-compose run composer install  --ignore-platform-reqs
+      context: .
+      args:
+        PUID: "${PUID:-1000}"
+        PGID: "${PGID:-1000}"
     volumes:
       - .:/app
-    working_dir: /app
-    entrypoint: /usr/local/bin/composer
-
-  phpunit:
-    build:
-      context: ./docker/php
-    volumes:
-      - .:/app
-    working_dir: /app
-    entrypoint: vendor/bin/phpunit
+      - ~/.composer:/home/user/.composer
