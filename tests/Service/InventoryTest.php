@@ -34,24 +34,26 @@ declare(strict_types=1);
 
 namespace DistriMedia\SoapClientTest\Service;
 
-use DistriMedia\SoapClient\InvalidCustomerException;
 use DistriMedia\SoapClient\Service\Inventory as InventoryService;
-use DistriMedia\SoapClient\Struct\Customer;
+use DistriMedia\SoapClient\Struct\Response\Inventory;
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Psr7\Response;
+use Psr\Http\Client\ClientInterface;
 
 class InventoryTest extends TestCase
 {
     /**
      * @return InventoryService
      */
-    private function createInventoryService(): InventoryService
+    private function createInventoryService(ClientInterface $client = null): InventoryService
     {
         $uri = $_ENV['API_URI'] ?: '';
         $webshopCode = $_ENV['WEBSHOP_CODE'] ?: '';
         $password = $_ENV['API_PASSWORD'] ?: '';
 
-        $orderService = new InventoryService($uri, $webshopCode, $password);
-
-        return $orderService;
+        return new InventoryService($uri, $webshopCode, $password, client: $client);
     }
 
     /**
@@ -69,10 +71,32 @@ class InventoryTest extends TestCase
      */
     public function testFetchAllInventory()
     {
-        $inventorService = $this->createInventoryService();
+        $mock = new MockHandler([
+            new Response(200, [], $this->getFixture('inventory')),
+        ]);
+
+        $client = new Client([
+            'handler' => HandlerStack::create($mock),
+        ]);
+
+        $inventorService = $this->createInventoryService($client);
 
         $result = $inventorService->fetchTotalInventory();
 
-        self::assertInstanceOf(\DistriMedia\SoapClient\Struct\Response\Inventory::class, $result);
+        self::assertInstanceOf(Inventory::class, $result);
+
+        self::assertCount(3, $result->getInventory());
+        self::assertCount(0, $result->getInventory()[0]->getLotStockItems());
+        self::assertCount(1, $result->getInventory()[1]->getLotStockItems());
+        self::assertCount(2, $result->getInventory()[2]->getLotStockItems());
+
+        $lotItems = $result->getInventory()[2]->getLotStockItems();
+
+        static::assertSame('960', $lotItems[1]->getPieces());
+        static::assertSame('211', $lotItems[1]->getOverdue());
+        static::assertSame('7', $lotItems[1]->getBlocked());
+        static::assertSame('L01/33', $lotItems[1]->getLotNumber());
+        static::assertSame('20260131', $lotItems[1]->getDueDate());
+        static::assertSame('20260130', $lotItems[1]->getLastPickableDate());
     }
 }

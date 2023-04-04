@@ -13,6 +13,7 @@ class StockItem
     const PROBLEM = 'Problem';
     const OVERDUE = 'Overdue';
     const BLOCKED = 'Blocked';
+    const DLB = 'DLB';
 
     private $ean;
     private $pieces;
@@ -21,6 +22,7 @@ class StockItem
     private $problem;
     private $overdue;
     private $blocked;
+    private $lotStockItems = [];
 
     public function __construct(
         array $data = []
@@ -33,6 +35,11 @@ class StockItem
         $this->problem = isset($data[self::PROBLEM]) ? $data[self::PROBLEM] : null;
         $this->overdue = isset($data[self::OVERDUE]) ? $data[self::OVERDUE] : null;
         $this->blocked = isset($data[self::BLOCKED]) ? $data[self::BLOCKED] : null;
+
+        if (isset($data[self::DLB])) {
+            $dlb = $data[self::DLB];
+            $this->lotStockItems = array_map(static fn (array $data) => new LotStockItem($data), array_is_list($dlb) ? $dlb : [$dlb]);
+        }
     }
 
     /**
@@ -89,5 +96,13 @@ class StockItem
     public function getBlocked()
     {
         return $this->blocked;
+    }
+
+    /**
+     * @return array<LotStockItem>
+     */
+    public function getLotStockItems(): array
+    {
+        return $this->lotStockItems;
     }
 }

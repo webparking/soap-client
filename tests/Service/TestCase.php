@@ -38,5 +38,8 @@ include_once('read_env.php');
 
 abstract class TestCase extends \PHPUnit\Framework\TestCase
 {
-
+    protected function getFixture(string $name): string
+    {
+        return file_get_contents(__DIR__ . '/fixtures/' .$name.'.xml');
+    }
 }

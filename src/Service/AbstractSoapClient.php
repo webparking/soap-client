@@ -35,6 +35,10 @@ declare(strict_types=1);
 namespace DistriMedia\SoapClient\Service;
 
 use DistriMedia\SoapClient\InvalidXmlResponseException;
+use GuzzleHttp\Client;
+use GuzzleHttp\HandlerStack;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\RequestInterface;
 use Psr\Log\LoggerInterface;
 use Spatie\ArrayToXml\ArrayToXml;
 
@@ -85,6 +89,8 @@ abstract class AbstractSoapClient
 
     private $timeout;
 
+    private ClientInterface $client;
+
     /**
      * AbstractSoapClient constructor.
      * @param string $uri
@@ -94,7 +100,8 @@ abstract class AbstractSoapClient
         string $uniqueWebshopID,
         string $soapPassword,
         int $timeout = self::TIMEOUT,
-        LoggerInterface $logger = null
+        LoggerInterface $logger = null,
+        ClientInterface $client = null,
     )
     {
         $this->logger = $logger;
@@ -102,6 +109,9 @@ abstract class AbstractSoapClient
         $this->uniqueWebshopID = $uniqueWebshopID;
         $this->soapPassword = $soapPassword;
         $this->timeout = $timeout;
+        $this->client = $client ?? new Client([
+            'handler' => HandlerStack::create(),
+        ]);
     }
 
     /**
@@ -132,32 +142,21 @@ abstract class AbstractSoapClient
      */
     private function __sendRequest($envelope, $action)
     {
-        $ch = curl_init();
+        $soapResponse = $this->client
+            ->post($this->uri, [
+                'body' => $envelope,
+                'headers' => [
+                    'Content-type' => 'text/xml;charset="utf-8"',
+                    'Accept' => 'text/xml',
+                    'Cache-Control' => 'no-cache',
+                    'Pragma' => 'no-cache',
+                    'SOAPAction' => $action
+                ],
+            ])
+            ->getBody()
+            ->getContents();
 
-        curl_setopt($ch, CURLOPT_URL, $this->uri);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $envelope);
-        //curl_setopt($ch, CURLOPT_TIMEOUT, $this->timeout);
-
-        $headers = [
-            "Content-type: text/xml;charset=\"utf-8\"",
-            "Accept: text/xml",
-            "Cache-Control: no-cache",
-            "Pragma: no-cache",
-            "SOAPAction: {$action}"
-        ];
-
-        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-
-        $soapResponse = curl_exec($ch);
-        if (is_string($soapResponse)) {
-            $result = $this::parseSoapResponseToArray($soapResponse);
-        } else {
-            $error = curl_error($ch);
-            throw new InvalidXmlResponseException("Soap call failed! {$error}");
-        }
+        $result = $this::parseSoapResponseToArray($soapResponse);
 
         if (!isset($result[self::SOAP_BODY])) {
             throw new InvalidXmlResponseException("Invalid SOAP response received");
