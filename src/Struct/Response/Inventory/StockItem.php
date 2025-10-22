@@ -7,6 +7,7 @@ namespace DistriMedia\SoapClient\Struct\Response\Inventory;
 class StockItem
 {
     const EAN = 'EAN';
+    const EXTREF = 'ExtRef';
     const PIECES = 'Pieces';
     const CLAIMED = 'Claimed';
     const CLAIMABLE = 'Claimable';
@@ -16,6 +17,7 @@ class StockItem
     const DLB = 'DLB';
 
     private $ean;
+    private $extRef;
     private $pieces;
     private $claimed;
     private $claimable;
@@ -29,6 +31,7 @@ class StockItem
     )
     {
         $this->ean = isset($data[self::EAN]) ? $data[self::EAN] : null;
+        $this->extRef = isset($data[self::EXTREF]) ? $data[self::EXTREF] : null;
         $this->pieces = isset($data[self::PIECES]) ? $data[self::PIECES] : null;
         $this->claimed = isset($data[self::CLAIMED]) ? (bool) $data[self::CLAIMED] : null;
         $this->claimable = isset($data[self::CLAIMABLE]) ? (int) $data[self::CLAIMABLE] : null;
@@ -48,6 +51,11 @@ class StockItem
     public function getEan()
     {
         return $this->ean;
+    }
+
+    public function getExtRef(): mixed
+    {
+        return $this->extRef;
     }
 
     /**
