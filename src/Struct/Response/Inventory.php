@@ -42,6 +42,11 @@ class Inventory extends AbstractResponse
     public function setInventory(array $inventoryItems)
     {
         $result = [];
+
+        if ($inventoryItems && !array_is_list($inventoryItems)) {
+            $inventoryItems = [$inventoryItems];
+        }
+
         foreach ($inventoryItems as $inventoryItem) {
             $result[] = new StockItem($inventoryItem);
         }
